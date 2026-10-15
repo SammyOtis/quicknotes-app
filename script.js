@@ -13,11 +13,11 @@ let notes = [];
 // Helper function to update the note counter message
 function updateNoteCount(count) {
   if (count === 0) {
-    noteCount.textContent = "0 notes";
+    noteCount.textContent = "You have no notes yet.";
   } else if (count === 1) {
-    noteCount.textContent = "1 note";
+    noteCount.textContent = "You have 1 note.";
   } else {
-    noteCount.textContent = `${count} notes`;
+    noteCount.textContent = `You have ${count} notes.`;
   }
 }
 
@@ -50,6 +50,12 @@ function render(notesToRender = notes) {
     deleteBtn.textContent = "Delete";
     deleteBtn.type = "button";
 
+    // Delete Event Handler
+    deleteBtn.addEventListener("click", () => {
+      notes = notes.filter((n) => n.id !== note.id);
+      render();
+    });
+
     // Assemble Card
     li.appendChild(contentDiv);
     li.appendChild(deleteBtn);
@@ -60,25 +66,26 @@ function render(notesToRender = notes) {
   updateNoteCount(notesToRender.length);
 }
 
-// 4. Form Submit Handler
+// 4. Form Submit Handler with Exact Validation Strings
 noteForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
   const text = noteInput.value.trim();
   const category = noteCategory.value;
 
-  // Validation
+  // Validation Check 1: Empty text
   if (text.length === 0) {
-    errorMessage.textContent = "Note content cannot be empty.";
+    errorMessage.textContent = "Please type a note first.";
     return;
   }
 
+  // Validation Check 2: Character limit
   if (text.length > 200) {
-    errorMessage.textContent = "Note content cannot exceed 200 characters.";
+    errorMessage.textContent = "Notes must be 200 characters or fewer.";
     return;
   }
 
-  // Clear any existing error message
+  // Clear error message when valid note is added
   errorMessage.textContent = "";
 
   // Create Note Object
