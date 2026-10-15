@@ -7,8 +7,27 @@ const searchInput = document.querySelector("#search-input");
 const noteCount = document.querySelector("#note-count");
 const notesList = document.querySelector("#notes-list");
 
-// 2. State Storage
-let notes = [];
+// 2. Storage Key & State Management
+const STORAGE_KEY = "quicknotes_app_notes";
+
+function loadNotes() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch (e) {
+      console.error("Failed to parse notes from localStorage", e);
+      return [];
+    }
+  }
+  return [];
+}
+
+let notes = loadNotes();
+
+function saveNotes() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+}
 
 // Helper function to update the note counter message
 function updateNoteCount(count) {
@@ -22,8 +41,21 @@ function updateNoteCount(count) {
 }
 
 // 3. Render Function (builds list safely using DOM methods)
-function render(notesToRender = notes) {
+function render(notesToRender = notes, isSearching = false) {
   notesList.textContent = ""; // Clear current list
+
+  if (notesToRender.length === 0) {
+    if (isSearching) {
+      const emptyLi = document.createElement("li");
+      emptyLi.textContent = "No notes match your search.";
+      emptyLi.style.padding = "1rem";
+      emptyLi.style.color = "#7f8c8d";
+      emptyLi.style.fontStyle = "italic";
+      notesList.appendChild(emptyLi);
+    }
+    updateNoteCount(notes.length);
+    return;
+  }
 
   notesToRender.forEach((note) => {
     // Create Note Card Container
@@ -53,7 +85,8 @@ function render(notesToRender = notes) {
     // Delete Event Handler
     deleteBtn.addEventListener("click", () => {
       notes = notes.filter((n) => n.id !== note.id);
-      render();
+      saveNotes();
+      handleSearch(); // Re-apply search filter after delete
     });
 
     // Assemble Card
@@ -63,10 +96,24 @@ function render(notesToRender = notes) {
     notesList.appendChild(li);
   });
 
-  updateNoteCount(notesToRender.length);
+  updateNoteCount(notes.length);
 }
 
-// 4. Form Submit Handler with Exact Validation Strings
+// 4. Search Filter Handler
+function handleSearch() {
+  const query = searchInput.value.toLowerCase().trim();
+  const isSearching = query.length > 0;
+
+  const filtered = notes.filter((note) =>
+    note.text.toLowerCase().includes(query)
+  );
+
+  render(filtered, isSearching);
+}
+
+searchInput.addEventListener("input", handleSearch);
+
+// 5. Form Submit Handler
 noteForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
@@ -96,14 +143,18 @@ noteForm.addEventListener("submit", (event) => {
     createdAt: new Date().toLocaleString(),
   };
 
-  // Add to state and update view
+  // Add to state, persist to localStorage, and render
   notes.push(newNote);
-  render();
+  saveNotes();
+  
+  // Reset search box if active and render
+  searchInput.value = "";
+  render(notes, false);
 
   // Reset form inputs
   noteInput.value = "";
   noteInput.focus();
 });
 
-// Initial Render
-render();
+// Initial Render on Page Load
+render(notes, false);
