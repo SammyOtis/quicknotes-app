@@ -6,6 +6,7 @@ const errorMessage = document.querySelector("#error-message");
 const searchInput = document.querySelector("#search-input");
 const noteCount = document.querySelector("#note-count");
 const notesList = document.querySelector("#notes-list");
+const clearAllBtn = document.querySelector("#clear-all-btn");
 
 // 2. Storage Key & State Management
 const STORAGE_KEY = "quicknotes_app_notes";
@@ -29,14 +30,17 @@ function saveNotes() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
 }
 
-// Helper function to update the note counter message
+// Helper function to update the note counter message & button state
 function updateNoteCount(count) {
   if (count === 0) {
     noteCount.textContent = "You have no notes yet.";
+    if (clearAllBtn) clearAllBtn.style.display = "none";
   } else if (count === 1) {
     noteCount.textContent = "You have 1 note.";
+    if (clearAllBtn) clearAllBtn.style.display = "inline-block";
   } else {
     noteCount.textContent = `You have ${count} notes.`;
+    if (clearAllBtn) clearAllBtn.style.display = "inline-block";
   }
 }
 
@@ -99,7 +103,20 @@ function render(notesToRender = notes, isSearching = false) {
   updateNoteCount(notes.length);
 }
 
-// 4. Search Filter Handler
+// 4. Clear All Functionality with Confirmation
+clearAllBtn.addEventListener("click", () => {
+  if (notes.length === 0) return;
+
+  const confirmed = confirm("Delete all notes?");
+  if (confirmed) {
+    notes = [];
+    saveNotes();
+    searchInput.value = "";
+    render(notes, false);
+  }
+});
+
+// 5. Search Filter Handler
 function handleSearch() {
   const query = searchInput.value.toLowerCase().trim();
   const isSearching = query.length > 0;
@@ -113,7 +130,7 @@ function handleSearch() {
 
 searchInput.addEventListener("input", handleSearch);
 
-// 5. Form Submit Handler
+// 6. Form Submit Handler
 noteForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
